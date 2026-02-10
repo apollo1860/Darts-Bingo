@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Darts Bingo 4×4</title>
+  <style>
+    :root{
+      --bg:#f8fafc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --border:#e2e8f0;
+      --cell:#f1f5f9;
+      --cellHover:#e8eef6;
+      --selectedBg:#dcfce7;
+      --selectedBorder:#22c55e;
+      --btn:#0f172a;
+      --btnText:#ffffff;
+      --btnGhost:#ffffff;
+      --btnGhostText:#0f172a;
+      --shadow: 0 12px 28px rgba(2, 6, 23, .08);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: linear-gradient(180deg, #ffffff 0%, var(--bg) 70%);
+      color:var(--text);
+      min-height:100vh;
+      padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+      display:grid;
+      place-items:center;
+    }
+
+    .wrap{
+      width:min(520px, 100%);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+
+    .controls{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid transparent;
+      border-radius:12px;
+      padding:10px 10px;
+      font-weight:700;
+      font-size:13px;
+      line-height:1;
+      cursor:pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-primary{
+      background:var(--btn);
+      color:var(--btnText);
+    }
+    .btn-primary:active{ transform: scale(.99); }
+
+    .btn-ghost{
+      background:var(--btnGhost);
+      color:var(--btnGhostText);
+      border-color: var(--border);
+    }
+    .btn-ghost:active{ transform: scale(.99); }
+
+    .meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      justify-content:space-between;
+      margin: 8px 0 12px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .chip{
+      border:1px solid var(--border);
+      background:#fff;
+      padding:4px 10px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:10px;
+    }
+
+    .cell{
+      background: var(--cell);
+      border: 1px solid var(--border);
+      border-radius:14px;
+      padding: 12px 10px;
+      min-height: 82px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      font-weight:800;
+      font-size: 13.5px;
+      line-height:1.15;
+      user-select:none;
+      cursor:pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .15s ease, border-color .15s ease, transform .06s ease;
+    }
+
+    .cell:active{
+      transform: scale(.99);
+      background: var(--cellHover);
+    }
+
+    .cell.selected{
+      background: var(--selectedBg);
+      border-color: var(--selectedBorder);
+    }
+
+    .hint{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    /* kleine Smartphones */
+    @media (max-width: 360px){
+      .wrap{ padding:12px; }
+      .grid{ gap:8px; }
+      .cell{ min-height: 78px; font-size: 13px; padding: 10px 8px; }
+      button{ padding: 9px 9px; font-size: 12.5px; }
+    }
+
+    /* iOS: mehr “app-like” */
+    @supports (padding: max(0px)){
+      body{ padding-left: max(14px, env(safe-area-inset-left));
+            padding-right: max(14px, env(safe-area-inset-right)); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🎯 Darts Bingo 4×4</h1>
+      <div class="controls">
+        <button class="btn-ghost" id="btnReset" title="Grün entfernen">Reset</button>
+        <button class="btn-primary" id="btnNew" title="Neue Karte">Neu</button>
+      </div>
+    </header>
+
+    <div class="meta">
+      <span class="chip" id="seedChip">Seed: –</span>
+      <span class="chip" id="countChip">Markiert: 0/16</span>
+      <button class="btn-ghost" id="btnLink" style="padding:8px 10px; font-size:12px;">Link</button>
+    </div>
+
+    <div class="grid" id="grid" aria-label="Bingo Grid"></div>
+
+    <div class="hint">
+      Tipp: „Link“ kopiert eine URL mit Seed, damit ihr beide exakt dieselbe Karte habt.
+    </div>
+  </div>
+
+  <script>
+    // ========== Pool ==========
+    const POOL = [
+      "Bull-Finish (50)",
+      "Single-Bull-Finish (25)",
+      "Über Doppel 14 auschecken",
+      "Checkout mit 2 Darts",
+      "Checkout: Triple → Doppel",
+      "Checkout auf ein ungerades Doppel",
+      "Checkout unter 40 ohne D20",
+      "3 gleiche Zahlen in einem Wurf",
+      "1 Triple + 1 Doppel im selben Wurf",
+      "Genau 60 Punkte (3 Darts)",
+      "Genau 100 Punkte (3 Darts)",
+      "Alle 3 Darts verschiedene Zahlen",
+      "Ein Leg ohne Triple gewinnen",
+      "Ansage-Checkout (Finish ansagen)",
+      "Leg nach Rückstand gewinnen",
+      "Doppel unter 10 treffen (D1–D9)",
+      "180 (oder 3× Bull zählt)",
+      "Genau 41 Punkte (3 Darts)",
+      "Genau 99 Punkte (3 Darts)",
+      "Checkout nach verfehltem 1. Dart",
+      "Leg ohne Doppel 20 gewinnen",
+      "Ein Wurf: mind. 2 Singles",
+      "Ein Wurf: mind. 2 Doubles",
+      "Ein Wurf: mind. 2 Triples",
+      "Finish mit gleichem Segment (z.B. 18–18–D18)",
+      "Ein Dart schwache Hand (Spaß)",
+      "Ein Wurf auf einem Bein (Spaß)"
+    ];
+
+    // ========== Seeded RNG ==========
+    function xmur3(str){
+      let h = 1779033703 ^ str.length;
+      for (let i=0;i<str.length;i++){
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return function(){
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        return (h ^= (h >>> 16)) >>> 0;
+      };
+    }
+    function mulberry32(a){
+      return function(){
+        let t = (a += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function rngFromSeed(seedStr){
+      const seedGen = xmur3(seedStr);
+      return mulberry32(seedGen());
+    }
+
+    // ========== Helpers ==========
+    function shuffle(arr, rand){
+      for (let i = arr.length - 1; i > 0; i--){
+        const j = Math.floor(rand() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function sampleN(arr, n, rand){
+      const copy = arr.slice();
+      shuffle(copy, rand);
+      return copy.slice(0, n);
+    }
+
+    // ========== UI State ==========
+    const gridEl = document.getElementById("grid");
+    const seedChip = document.getElementById("seedChip");
+    const countChip = document.getElementById("countChip");
+    const btnNew = document.getElementById("btnNew");
+    const btnReset = document.getElementById("btnReset");
+    const btnLink = document.getElementById("btnLink");
+
+    function getSeedFromUrl(){
+      const params = new URLSearchParams(location.search);
+      return params.get("seed");
+    }
+    function makeSeed(){
+      return (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)).toUpperCase();
+    }
+    function setSeedInUrl(seedStr){
+      const url = new URL(location.href);
+      url.searchParams.set("seed", seedStr);
+      history.replaceState({}, "", url);
+    }
+
+    let currentSeed = getSeedFromUrl() || makeSeed();
+    let currentCard = [];
+    let selected = new Set();
+
+    function updateChips(){
+      seedChip.textContent = `Seed: ${currentSeed}`;
+      countChip.textContent = `Markiert: ${selected.size}/16`;
+    }
+
+    function generateCard(seedStr){
+      const rand = rngFromSeed(seedStr);
+      const picked = sampleN(POOL, 16, rand);
+      shuffle(picked, rand);
+      return picked;
+    }
+
+    function renderCard(){
+      gridEl.innerHTML = "";
+      selected.clear();
+      updateChips();
+
+      currentCard.forEach((text, idx) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.setAttribute("role", "button");
+        cell.setAttribute("tabindex", "0");
+        cell.dataset.index = String(idx);
+        cell.textContent = text;
+
+        function toggle(){
+          const i = cell.dataset.index;
+          if (selected.has(i)){
+            selected.delete(i);
+            cell.classList.remove("selected");
+          } else {
+            selected.add(i);
+            cell.classList.add("selected");
+          }
+          updateChips();
+        }
+
+        cell.addEventListener("click", toggle);
+        cell.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " "){
+            e.preventDefault();
+            toggle();
+          }
+        });
+
+        gridEl.appendChild(cell);
+      });
+    }
+
+    // Buttons
+    btnNew.addEventListener("click", () => {
+      currentSeed = makeSeed();
+      setSeedInUrl(currentSeed);
+      currentCard = generateCard(currentSeed);
+      renderCard();
+    });
+
+    btnReset.addEventListener("click", () => {
+      selected.clear();
+      document.querySelectorAll(".cell").forEach(c => c.classList.remove("selected"));
+      updateChips();
+    });
+
+    btnLink.addEventListener("click", async () => {
+      const url = new URL(location.href);
+      url.searchParams.set("seed", currentSeed);
+      try{
+        await navigator.clipboard.writeText(url.toString());
+        btnLink.textContent = "Kopiert ✓";
+        setTimeout(()=> btnLink.textContent = "Link", 1100);
+      } catch {
+        window.prompt("Kopiere den Link:", url.toString());
+      }
+    });
+
+    // Init
+    setSeedInUrl(currentSeed);
+    currentCard = generateCard(currentSeed);
+    renderCard();
+  </script>
+</body>
+</html>
