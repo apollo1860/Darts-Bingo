@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Darts Bingo 4×4</title>
+
   <style>
     :root{
       --bg:#f8fafc;
@@ -23,23 +24,24 @@
     }
 
     *{ box-sizing:border-box; }
+
     body{
       margin:0;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       background: linear-gradient(180deg, #ffffff 0%, var(--bg) 70%);
       color:var(--text);
       min-height:100vh;
-      padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+      padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
       display:grid;
       place-items:center;
     }
 
     .wrap{
-      width:min(520px, 100%);
+      width:min(480px, 100%);
       background:var(--card);
       border:1px solid var(--border);
       border-radius:16px;
-      padding:14px;
+      padding:12px;
       box-shadow: var(--shadow);
     }
 
@@ -47,19 +49,19 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
-      margin-bottom:10px;
+      gap:8px;
+      margin-bottom:8px;
     }
 
     h1{
       margin:0;
-      font-size:16px;
+      font-size:15px;
       letter-spacing:.2px;
     }
 
     .controls{
       display:flex;
-      gap:8px;
+      gap:6px;
       align-items:center;
     }
 
@@ -67,9 +69,9 @@
       appearance:none;
       border:1px solid transparent;
       border-radius:12px;
-      padding:10px 10px;
+      padding:8px 9px;
       font-weight:700;
-      font-size:13px;
+      font-size:12.5px;
       line-height:1;
       cursor:pointer;
       touch-action: manipulation;
@@ -80,30 +82,28 @@
       background:var(--btn);
       color:var(--btnText);
     }
-    .btn-primary:active{ transform: scale(.99); }
 
     .btn-ghost{
       background:var(--btnGhost);
       color:var(--btnGhostText);
       border-color: var(--border);
     }
-    .btn-ghost:active{ transform: scale(.99); }
 
     .meta{
       display:flex;
       flex-wrap:wrap;
-      gap:8px;
+      gap:6px;
       align-items:center;
       justify-content:space-between;
-      margin: 8px 0 12px;
+      margin: 6px 0 10px;
       color:var(--muted);
-      font-size:12px;
+      font-size:11.5px;
     }
 
     .chip{
       border:1px solid var(--border);
       background:#fff;
-      padding:4px 10px;
+      padding:3px 8px;
       border-radius:999px;
       white-space:nowrap;
     }
@@ -111,21 +111,21 @@
     .grid{
       display:grid;
       grid-template-columns: repeat(4, 1fr);
-      gap:10px;
+      gap:8px;
     }
 
     .cell{
       background: var(--cell);
       border: 1px solid var(--border);
       border-radius:14px;
-      padding: 12px 10px;
-      min-height: 82px;
+      padding:10px 8px;
+      min-height:72px;
       display:grid;
       place-items:center;
       text-align:center;
       font-weight:800;
-      font-size: 13.5px;
-      line-height:1.15;
+      font-size:12.5px;
+      line-height:1.1;
       user-select:none;
       cursor:pointer;
       touch-action: manipulation;
@@ -144,24 +144,18 @@
     }
 
     .hint{
-      margin-top: 10px;
+      margin-top:8px;
       color: var(--muted);
-      font-size: 12px;
-      line-height: 1.25;
+      font-size:11.5px;
+      line-height:1.25;
     }
 
-    /* kleine Smartphones */
-    @media (max-width: 360px){
-      .wrap{ padding:12px; }
-      .grid{ gap:8px; }
-      .cell{ min-height: 78px; font-size: 13px; padding: 10px 8px; }
-      button{ padding: 9px 9px; font-size: 12.5px; }
-    }
-
-    /* iOS: mehr “app-like” */
-    @supports (padding: max(0px)){
-      body{ padding-left: max(14px, env(safe-area-inset-left));
-            padding-right: max(14px, env(safe-area-inset-right)); }
+    /* sehr kleine Smartphones */
+    @media (max-width: 340px){
+      .cell{
+        min-height:68px;
+        font-size:12px;
+      }
     }
   </style>
 </head>
@@ -171,26 +165,25 @@
     <header>
       <h1>🎯 Darts Bingo 4×4</h1>
       <div class="controls">
-        <button class="btn-ghost" id="btnReset" title="Grün entfernen">Reset</button>
-        <button class="btn-primary" id="btnNew" title="Neue Karte">Neu</button>
+        <button class="btn-ghost" id="btnReset">Reset</button>
+        <button class="btn-primary" id="btnNew">Neu</button>
       </div>
     </header>
 
     <div class="meta">
       <span class="chip" id="seedChip">Seed: –</span>
       <span class="chip" id="countChip">Markiert: 0/16</span>
-      <button class="btn-ghost" id="btnLink" style="padding:8px 10px; font-size:12px;">Link</button>
+      <button class="btn-ghost" id="btnLink">Link</button>
     </div>
 
-    <div class="grid" id="grid" aria-label="Bingo Grid"></div>
+    <div class="grid" id="grid"></div>
 
     <div class="hint">
-      Tipp: „Link“ kopiert eine URL mit Seed, damit ihr beide exakt dieselbe Karte habt.
+      Tipp: „Link“ kopiert eine URL mit Seed – beide Spieler haben dieselbe Karte.
     </div>
   </div>
 
   <script>
-    // ========== Pool ==========
     const POOL = [
       "Back to Back 140",
       "Check über D17",
@@ -204,13 +197,12 @@
       "Madhouse Check",
       "134",
       "Finish nach 9",
-      "Checkout Streak von 5 (X)",
-      "Min. 85,00 Power Scoring Avg. (X)",
+      "Checkout Streak von 5",
+      "Min. 85,00 Power Scoring Avg.",
       "Leg ohne Streudart",
       "Leggewinn nur über untere Darthälfte"
     ];
 
-    // ========== Seeded RNG ==========
     function xmur3(str){
       let h = 1779033703 ^ str.length;
       for (let i=0;i<str.length;i++){
@@ -223,6 +215,7 @@
         return (h ^= (h >>> 16)) >>> 0;
       };
     }
+
     function mulberry32(a){
       return function(){
         let t = (a += 0x6D2B79F5);
@@ -231,12 +224,11 @@
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
     }
+
     function rngFromSeed(seedStr){
-      const seedGen = xmur3(seedStr);
-      return mulberry32(seedGen());
+      return mulberry32(xmur3(seedStr)());
     }
 
-    // ========== Helpers ==========
     function shuffle(arr, rand){
       for (let i = arr.length - 1; i > 0; i--){
         const j = Math.floor(rand() * (i + 1));
@@ -244,13 +236,13 @@
       }
       return arr;
     }
+
     function sampleN(arr, n, rand){
       const copy = arr.slice();
       shuffle(copy, rand);
       return copy.slice(0, n);
     }
 
-    // ========== UI State ==========
     const gridEl = document.getElementById("grid");
     const seedChip = document.getElementById("seedChip");
     const countChip = document.getElementById("countChip");
@@ -258,50 +250,42 @@
     const btnReset = document.getElementById("btnReset");
     const btnLink = document.getElementById("btnLink");
 
-    function getSeedFromUrl(){
-      const params = new URLSearchParams(location.search);
-      return params.get("seed");
-    }
     function makeSeed(){
-      return (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)).toUpperCase();
+      return (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)).toUpperCase();
     }
-    function setSeedInUrl(seedStr){
+
+    function getSeed(){
+      return new URLSearchParams(location.search).get("seed") || makeSeed();
+    }
+
+    function setSeed(seed){
       const url = new URL(location.href);
-      url.searchParams.set("seed", seedStr);
+      url.searchParams.set("seed", seed);
       history.replaceState({}, "", url);
     }
 
-    let currentSeed = getSeedFromUrl() || makeSeed();
-    let currentCard = [];
+    let seed = getSeed();
     let selected = new Set();
 
-    function updateChips(){
-      seedChip.textContent = `Seed: ${currentSeed}`;
+    function updateMeta(){
+      seedChip.textContent = `Seed: ${seed}`;
       countChip.textContent = `Markiert: ${selected.size}/16`;
     }
 
-    function generateCard(seedStr){
-      const rand = rngFromSeed(seedStr);
-      const picked = sampleN(POOL, 16, rand);
-      shuffle(picked, rand);
-      return picked;
-    }
+    function render(){
+      const rand = rngFromSeed(seed);
+      const card = shuffle(sampleN(POOL, 16, rand), rand);
 
-    function renderCard(){
       gridEl.innerHTML = "";
       selected.clear();
-      updateChips();
+      updateMeta();
 
-      currentCard.forEach((text, idx) => {
+      card.forEach((text, i) => {
         const cell = document.createElement("div");
         cell.className = "cell";
-        cell.setAttribute("role", "button");
-        cell.setAttribute("tabindex", "0");
-        cell.dataset.index = String(idx);
         cell.textContent = text;
 
-        function toggle(){
-          const i = cell.dataset.index;
+        cell.onclick = () => {
           if (selected.has(i)){
             selected.delete(i);
             cell.classList.remove("selected");
@@ -309,51 +293,38 @@
             selected.add(i);
             cell.classList.add("selected");
           }
-          updateChips();
-        }
-
-        cell.addEventListener("click", toggle);
-        cell.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " "){
-            e.preventDefault();
-            toggle();
-          }
-        });
+          updateMeta();
+        };
 
         gridEl.appendChild(cell);
       });
     }
 
-    // Buttons
-    btnNew.addEventListener("click", () => {
-      currentSeed = makeSeed();
-      setSeedInUrl(currentSeed);
-      currentCard = generateCard(currentSeed);
-      renderCard();
-    });
+    btnNew.onclick = () => {
+      seed = makeSeed();
+      setSeed(seed);
+      render();
+    };
 
-    btnReset.addEventListener("click", () => {
+    btnReset.onclick = () => {
       selected.clear();
       document.querySelectorAll(".cell").forEach(c => c.classList.remove("selected"));
-      updateChips();
-    });
+      updateMeta();
+    };
 
-    btnLink.addEventListener("click", async () => {
-      const url = new URL(location.href);
-      url.searchParams.set("seed", currentSeed);
+    btnLink.onclick = async () => {
+      const url = location.href;
       try{
-        await navigator.clipboard.writeText(url.toString());
-        btnLink.textContent = "Kopiert ✓";
-        setTimeout(()=> btnLink.textContent = "Link", 1100);
+        await navigator.clipboard.writeText(url);
+        btnLink.textContent = "✓";
+        setTimeout(() => btnLink.textContent = "Link", 900);
       } catch {
-        window.prompt("Kopiere den Link:", url.toString());
+        prompt("Link kopieren:", url);
       }
-    });
+    };
 
-    // Init
-    setSeedInUrl(currentSeed);
-    currentCard = generateCard(currentSeed);
-    renderCard();
+    setSeed(seed);
+    render();
   </script>
 </body>
 </html>
