@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Darts Bingo 4×4 (bis zu 3 Spieler)</title>
+
+  <style>
+    :root{
+      --bg:#f8fafc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --border:#e2e8f0;
+      --cell:#f1f5f9;
+      --cellHover:#e8eef6;
+
+      --blue:#2563eb;
+      --green:#16a34a;
+      --red:#dc2626;
+
+      --blueBg:#dbeafe;
+      --greenBg:#dcfce7;
+      --redBg:#fee2e2;
+
+      --shadow: 0 12px 28px rgba(2, 6, 23, .08);
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: linear-gradient(180deg, #ffffff 0%, var(--bg) 70%);
+      color:var(--text);
+      min-height:100vh;
+      padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+      display:grid;
+      place-items:center;
+    }
+
+    .wrap{
+      width:min(480px, 100%);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:12px;
+      box-shadow: var(--shadow);
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:8px;
+    }
+
+    h1{
+      margin:0;
+      font-size:15px;
+      letter-spacing:.2px;
+    }
+
+    .topRight{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .colorPick{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+
+    .swatch{
+      width:28px;
+      height:28px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      cursor:pointer;
+      position:relative;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .swatch:active{ transform: scale(.98); }
+
+    .swatch.active::after{
+      content:"";
+      position:absolute;
+      inset:-3px;
+      border-radius:12px;
+      border:2px solid #0f172a;
+      pointer-events:none;
+    }
+
+    .swatch.blue{ background: var(--blueBg); border-color: color-mix(in srgb, var(--blue) 30%, var(--border)); }
+    .swatch.green{ background: var(--greenBg); border-color: color-mix(in srgb, var(--green) 30%, var(--border)); }
+    .swatch.red{ background: var(--redBg); border-color: color-mix(in srgb, var(--red) 30%, var(--border)); }
+
+    .swatch.clear{
+      background:#fff;
+      border-style:dashed;
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .controls{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+
+    button{
+      appearance:none;
+      border:1px solid transparent;
+      border-radius:12px;
+      padding:8px 9px;
+      font-weight:700;
+      font-size:12.5px;
+      line-height:1;
+      cursor:pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      background:#fff;
+      color:var(--text);
+      border-color: var(--border);
+    }
+    button:active{ transform: scale(.99); }
+
+    .btnPrimary{
+      background:#0f172a;
+      color:#fff;
+      border-color:#0f172a;
+    }
+
+    .meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+      justify-content:space-between;
+      margin: 6px 0 10px;
+      color:var(--muted);
+      font-size:11.5px;
+    }
+
+    .chip{
+      border:1px solid var(--border);
+      background:#fff;
+      padding:3px 8px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+
+    .winner{
+      width:100%;
+      margin: 8px 0 10px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 10px;
+      font-size:13px;
+      font-weight:800;
+      display:none;
+      align-items:center;
+      gap:10px;
+      justify-content:space-between;
+    }
+    .winner.show{ display:flex; }
+    .winner small{ font-weight:700; color:var(--muted); }
+
+    .winner.blue{ background: var(--blueBg); border-color: color-mix(in srgb, var(--blue) 20%, var(--border)); }
+    .winner.green{ background: var(--greenBg); border-color: color-mix(in srgb, var(--green) 20%, var(--border)); }
+    .winner.red{ background: var(--redBg); border-color: color-mix(in srgb, var(--red) 20%, var(--border)); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:8px;
+    }
+
+    .cell{
+      background: var(--cell);
+      border: 1px solid var(--border);
+      border-radius:14px;
+      padding:10px 8px;
+      min-height:72px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      font-weight:800;
+      font-size:12.5px;
+      line-height:1.1;
+      user-select:none;
+      cursor:pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .15s ease, border-color .15s ease, transform .06s ease;
+      position:relative;
+    }
+
+    .cell:active{
+      transform: scale(.99);
+      background: var(--cellHover);
+    }
+
+    /* Ownership styles */
+    .cell.owner-blue{ background: var(--blueBg); border-color: color-mix(in srgb, var(--blue) 35%, var(--border)); }
+    .cell.owner-green{ background: var(--greenBg); border-color: color-mix(in srgb, var(--green) 35%, var(--border)); }
+    .cell.owner-red{ background: var(--redBg); border-color: color-mix(in srgb, var(--red) 35%, var(--border)); }
+
+    /* Tiny corner dot to show owner clearly */
+    .cell::before{
+      content:"";
+      position:absolute;
+      top:8px;
+      right:8px;
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.15);
+      background:transparent;
+    }
+    .cell.owner-blue::before{ background: var(--blue); }
+    .cell.owner-green::before{ background: var(--green); }
+    .cell.owner-red::before{ background: var(--red); }
+
+    .hint{
+      margin-top:8px;
+      color: var(--muted);
+      font-size:11.5px;
+      line-height:1.25;
+    }
+
+    @media (max-width: 340px){
+      .cell{ min-height:68px; font-size:12px; }
+      .swatch{ width:26px; height:26px; border-radius:9px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🎯 Darts Bingo 4×4 (bis zu 3 Spieler)</h1>
+
+      <div class="topRight">
+        <div class="colorPick" aria-label="Spielerfarbe auswählen">
+          <div class="swatch blue active"  id="pickBlue"  title="Spieler Blau"></div>
+          <div class="swatch green"        id="pickGreen" title="Spieler Grün"></div>
+          <div class="swatch red"          id="pickRed"   title="Spieler Rot"></div>
+          <div class="swatch clear"        id="pickClear" title="Radiergummi">⌫</div>
+        </div>
+
+        <div class="controls">
+          <button id="btnReset">Reset</button>
+          <button class="btnPrimary" id="btnNew">Neu</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="meta">
+      <span class="chip" id="seedChip">Seed: –</span>
+      <span class="chip" id="countChip">Belegt: 0/16</span>
+      <button id="btnLink">Link</button>
+    </div>
+
+    <div class="winner" id="winnerBanner">
+      <div id="winnerText">Gewinner: –</div>
+      <small>4 in einer Reihe (↔ oder ↕)</small>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="hint">
+      Regeln: Tippe oben eine Farbe an → tippe ein Feld, um es zu beanspruchen. Stehlen ist erlaubt (überschreibt Farbe).
+      Mit ⌫ kannst du ein Feld wieder freimachen.
+    </div>
+  </div>
+
+  <script>
+    // Challenges aus deinem Code (unverändert)
+    const POOL = [
+      "Back to Back 140",
+      "Check über D17",
+      "Shanghai",
+      "Doppel Doppel",
+      "High Finish",
+      "Whitewash",
+      "Maximum",
+      "100% Check",
+      "Check über Bull",
+      "Madhouse Check",
+      "134",
+      "Finish nach 9",
+      "Checkout Streak von 5 (X)",
+      "Min. 85,00 Power Scoring Avg. (X)",
+      "Leg ohne Streudart",
+      "Leggewinn nur über untere Darthälfte"
+    ];
+
+    // --- Seeded RNG (wie zuvor) ---
+    function xmur3(str){
+      let h = 1779033703 ^ str.length;
+      for (let i=0;i<str.length;i++){
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return function(){
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        return (h ^= (h >>> 16)) >>> 0;
+      };
+    }
+    function mulberry32(a){
+      return function(){
+        let t = (a += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function rngFromSeed(seedStr){
+      return mulberry32(xmur3(seedStr)());
+    }
+    function shuffle(arr, rand){
+      for (let i = arr.length - 1; i > 0; i--){
+        const j = Math.floor(rand() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function sampleN(arr, n, rand){
+      const copy = arr.slice();
+      shuffle(copy, rand);
+      return copy.slice(0, n);
+    }
+
+    // --- UI refs ---
+    const gridEl = document.getElementById("grid");
+    const seedChip = document.getElementById("seedChip");
+    const countChip = document.getElementById("countChip");
+    const btnNew = document.getElementById("btnNew");
+    const btnReset = document.getElementById("btnReset");
+    const btnLink = document.getElementById("btnLink");
+
+    const pickBlue = document.getElementById("pickBlue");
+    const pickGreen = document.getElementById("pickGreen");
+    const pickRed = document.getElementById("pickRed");
+    const pickClear = document.getElementById("pickClear");
+
+    const winnerBanner = document.getElementById("winnerBanner");
+    const winnerText = document.getElementById("winnerText");
+
+    // --- State ---
+    const COLORS = ["blue", "green", "red"]; // Spielerfarben
+    let active = "blue";                    // aktuell ausgewählte "Malfarbe"
+    let seed = getSeed();
+    let card = [];                          // 16 challenges
+    let owners = Array(16).fill(null);      // null | "blue" | "green" | "red"
+
+    function makeSeed(){
+      return (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)).toUpperCase();
+    }
+    function getSeed(){
+      return new URLSearchParams(location.search).get("seed") || makeSeed();
+    }
+    function setSeed(seedStr){
+      const url = new URL(location.href);
+      url.searchParams.set("seed", seedStr);
+      history.replaceState({}, "", url);
+    }
+
+    function setActive(color){
+      active = color; // "blue"|"green"|"red"|"clear"
+      // UI highlight
+      [pickBlue, pickGreen, pickRed, pickClear].forEach(el => el.classList.remove("active"));
+      if (color === "blue") pickBlue.classList.add("active");
+      else if (color === "green") pickGreen.classList.add("active");
+      else if (color === "red") pickRed.classList.add("active");
+      else pickClear.classList.add("active");
+    }
+
+    function updateMeta(){
+      seedChip.textContent = `Seed: ${seed}`;
+      const filled = owners.filter(Boolean).length;
+      countChip.textContent = `Belegt: ${filled}/16`;
+    }
+
+    function clearWinner(){
+      winnerBanner.className = "winner";
+      winnerBanner.classList.remove("show");
+      winnerText.textContent = "Gewinner: –";
+    }
+
+    function showWinner(color){
+      const label = color === "blue" ? "Blau" : color === "green" ? "Grün" : "Rot";
+      winnerText.textContent = `🏆 Gewinner: Spieler ${label}`;
+      winnerBanner.className = `winner show ${color}`;
+    }
+
+    // Check: 4 in a row horizontally or vertically for SAME non-null owner
+    function checkWinner(){
+      // rows
+      for (let r = 0; r < 4; r++){
+        const base = owners[r*4];
+        if (base && owners[r*4+1] === base && owners[r*4+2] === base && owners[r*4+3] === base){
+          return base;
+        }
+      }
+      // cols
+      for (let c = 0; c < 4; c++){
+        const base = owners[c];
+        if (base && owners[c+4] === base && owners[c+8] === base && owners[c+12] === base){
+          return base;
+        }
+      }
+      return null;
+    }
+
+    function applyOwnerClass(cell, owner){
+      cell.classList.remove("owner-blue","owner-green","owner-red");
+      if (owner) cell.classList.add(`owner-${owner}`);
+    }
+
+    function render(){
+      const rand = rngFromSeed(seed);
+      card = shuffle(sampleN(POOL, 16, rand), rand);
+
+      owners = Array(16).fill(null);
+      clearWinner();
+      updateMeta();
+
+      gridEl.innerHTML = "";
+
+      card.forEach((text, i) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = text;
+
+        cell.addEventListener("click", () => {
+          // If already a winner, you can still keep playing; remove if you want to lock.
+          if (active === "clear") {
+            owners[i] = null;
+          } else {
+            // "abluchsen" = overwrite allowed
+            owners[i] = active;
+          }
+
+          applyOwnerClass(cell, owners[i]);
+          updateMeta();
+
+          const w = checkWinner();
+          if (w) showWinner(w);
+          else clearWinner();
+        });
+
+        gridEl.appendChild(cell);
+      });
+    }
+
+    // Color picker events
+    pickBlue.addEventListener("click", () => setActive("blue"));
+    pickGreen.addEventListener("click", () => setActive("green"));
+    pickRed.addEventListener("click", () => setActive("red"));
+    pickClear.addEventListener("click", () => setActive("clear"));
+
+    // Buttons
+    btnNew.addEventListener("click", () => {
+      seed = makeSeed();
+      setSeed(seed);
+      setActive("blue");
+      render();
+    });
+
+    btnReset.addEventListener("click", () => {
+      owners = Array(16).fill(null);
+      clearWinner();
+      updateMeta();
+      document.querySelectorAll(".cell").forEach((cell, idx) => applyOwnerClass(cell, owners[idx]));
+    });
+
+    btnLink.addEventListener("click", async () => {
+      const url = location.href;
+      try{
+        await navigator.clipboard.writeText(url);
+        btnLink.textContent = "✓";
+        setTimeout(() => btnLink.textContent = "Link", 900);
+      } catch {
+        prompt("Link kopieren:", url);
+      }
+    });
+
+    // Init
+    setSeed(seed);
+    setActive("blue");
+    render();
+  </script>
+</body>
+</html>
